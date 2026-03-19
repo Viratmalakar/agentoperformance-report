@@ -1,9 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head><title>Report Type</title></head>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
+
 <h1>Select Report Type</h1>
-<a href="/apr"><button>Agent Performance Report</button></a>
-<a href="/first-login"><button>First Login Report</button></a>
-</body>
-</html>
+
+<a href="/apr">
+    <button>Agent Performance Report</button>
+</a>
+
+<a href="/first-login">
+    <button>First Login Report</button>
+</a>
+
+{% endblock %}
