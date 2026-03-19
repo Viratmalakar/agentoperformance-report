@@ -1,6 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+
 <h2>Upload APR & CDR</h2>
+
 <form method="POST" enctype="multipart/form-data">
-APR File: <input type="file" name="apr_file"><br><br>
-CDR File: <input type="file" name="cdr_file"><br><br>
-<button type="submit">Process</button>
+    <label>APR File:</label>
+    <input type="file" name="apr_file" required><br><br>
+
+    <label>CDR File:</label>
+    <input type="file" name="cdr_file" required><br><br>
+
+    <button type="submit">Process</button>
 </form>
+
+{% endblock %}
