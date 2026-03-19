@@ -5,20 +5,29 @@ import time
 
 app = Flask(__name__)
 
-# HOME PAGE
+# Upload folder fix
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+# ---------------- HOME ----------------
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# APR PAGE
+
+# ---------------- APR ----------------
 @app.route('/apr', methods=['GET', 'POST'])
 def apr():
     if request.method == 'POST':
         apr_file = request.files['apr_file']
         cdr_file = request.files['cdr_file']
 
-        apr_path = os.path.join("uploads", apr_file.filename)
-        cdr_path = os.path.join("uploads", cdr_file.filename)
+        # Ensure folder exists
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+        apr_path = os.path.join(UPLOAD_FOLDER, apr_file.filename)
+        cdr_path = os.path.join(UPLOAD_FOLDER, cdr_file.filename)
 
         apr_file.save(apr_path)
         cdr_file.save(cdr_path)
@@ -30,12 +39,16 @@ def apr():
 
     return render_template('apr_upload.html')
 
-# FIRST LOGIN PAGE
+
+# ---------------- FIRST LOGIN ----------------
 @app.route('/first-login', methods=['GET', 'POST'])
 def first_login():
     if request.method == 'POST':
         file = request.files['file']
-        path = os.path.join("uploads", file.filename)
+
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+        path = os.path.join(UPLOAD_FOLDER, file.filename)
         file.save(path)
 
         from first_login_module.main import process_login
@@ -45,13 +58,18 @@ def first_login():
 
     return render_template('first_login.html')
 
-# AUTO RESTART
+
+# ---------------- AUTO RESTART ----------------
 def restart_server():
     while True:
-        time.sleep(420)
+        time.sleep(420)  # 7 minutes
+        print("Restarting server...")
         os._exit(0)
+
 
 threading.Thread(target=restart_server, daemon=True).start()
 
+
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
