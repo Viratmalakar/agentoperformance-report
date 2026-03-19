@@ -1,75 +1,66 @@
 from flask import Flask, render_template, request
-import os
-import threading
-import time
+import pandas as pd
 
 app = Flask(__name__)
 
-# Upload folder fix
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-
-# ---------------- HOME ----------------
+# 🔷 HOME PAGE
 @app.route('/')
-def index():
+def home():
+    return render_template('home.html')
+
+
+# 🔷 AGENT PERFORMANCE (TUMHARA ORIGINAL DASHBOARD)
+@app.route('/agent', methods=['GET', 'POST'])
+def agent():
+    if request.method == 'POST':
+        agent_file = request.files['agent']
+        cdr_file = request.files['cdr']
+
+        df_agent = pd.read_excel(agent_file)
+        df_cdr = pd.read_excel(cdr_file)
+
+        df_agent.fillna(0, inplace=True)
+
+        # 👉 SAME LOGIC (as your project)
+        df_agent['Total Break'] = (
+            df_agent['LUNCHBREAK'] +
+            df_agent['TEABREAK'] +
+            df_agent['SHORTBREAK']
+        )
+
+        df_agent['Net Login'] = (
+            df_agent['Total Login Time'] - df_agent['Total Break']
+        )
+
+        # 🔥 IMPORTANT: YAHI CHANGE HAI
+        # 👉 yaha apna ORIGINAL TEMPLATE NAME daalo
+        return render_template('index.html',   # ⚠️ agar tumhara file naam alag hai to change karo
+                               tables=df_agent.to_dict(orient='records'))
+
     return render_template('index.html')
 
 
-# ---------------- APR ----------------
-@app.route('/apr', methods=['GET', 'POST'])
-def apr():
-    if request.method == 'POST':
-        apr_file = request.files['apr_file']
-        cdr_file = request.files['cdr_file']
-
-        # Ensure folder exists
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-        apr_path = os.path.join(UPLOAD_FOLDER, apr_file.filename)
-        cdr_path = os.path.join(UPLOAD_FOLDER, cdr_file.filename)
-
-        apr_file.save(apr_path)
-        cdr_file.save(cdr_path)
-
-        from apr_module.main import process_apr
-        result = process_apr(apr_path, cdr_path)
-
-        return render_template('result.html', data=result)
-
-    return render_template('apr_upload.html')
-
-
-# ---------------- FIRST LOGIN ----------------
-@app.route('/first-login', methods=['GET', 'POST'])
-def first_login():
+# 🔷 FIRST LOGIN REPORT
+@app.route('/firstlogin', methods=['GET', 'POST'])
+def firstlogin():
     if request.method == 'POST':
         file = request.files['file']
+        df = pd.read_excel(file)
 
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        df['Login Time'] = pd.to_datetime(df['Login Time'])
 
-        path = os.path.join(UPLOAD_FOLDER, file.filename)
-        file.save(path)
+        first_login = (
+            df.sort_values('Login Time')
+              .groupby('Agent Name')
+              .first()
+              .reset_index()
+        )
 
-        from first_login_module.main import process_login
-        result = process_login(path)
+        return render_template('firstlogin.html',
+                               tables=first_login.to_dict(orient='records'))
 
-        return render_template('result.html', data=result)
-
-    return render_template('first_login.html')
-
-
-# ---------------- AUTO RESTART ----------------
-def restart_server():
-    while True:
-        time.sleep(420)  # 7 minutes
-        print("Restarting server...")
-        os._exit(0)
+    return render_template('firstlogin.html')
 
 
-threading.Thread(target=restart_server, daemon=True).start()
-
-
-# ---------------- RUN ----------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run(debug=True)
